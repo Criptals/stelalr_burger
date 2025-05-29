@@ -19,9 +19,21 @@ describe('Тестирование пользовательского интер
 
   describe('Тестирование модальных окон с информацией об ингредиентах', () => {
     describe('Открытие модального окна', () => {
-      it('Клик по карточке ингредиента открывает модальное окно', () => {
-        cy.get(`${bunElement}:first`).click();
-        cy.get(MODAL_CONTAINER).children().should('have.length', 2);
+      it('Клик по карточке ингредиента открывает модальное окно и отображает корректные данные', () => {
+        cy.get('[data-cy="bun"]:first').click();
+
+        cy.get('#modals').children().should('have.length', 2);
+
+        cy.fixture('ingredients').then((fixture) => {
+          const ingredients = fixture.data;
+          const expectedBun = ingredients.find((item) => item.type === 'bun');
+
+          expect(expectedBun).to.exist;
+
+          cy.get('#modals h3.text_type_main-medium')
+            .should('exist')
+            .and('have.text', expectedBun.name);
+        });
       });
 
       it('Модалка остаётся после перезагрузки страницы', () => {
@@ -51,6 +63,24 @@ describe('Тестирование пользовательского интер
         cy.get('body').type('{esc}');
         cy.wait(500);
         cy.get(MODAL_CONTAINER).children().should('have.length', 0);
+      });
+    });
+  });
+
+  describe('Добавление ингредиента в конструктор бургера', () => {
+    it('Пользователь может добавить ингредиент в конструктор и увидеть его там', () => {
+      cy.get('[data-cy="main"]:first').as('ingredient');
+
+      cy.fixture('ingredients').then((fixture) => {
+        const ingredients = fixture.data;
+        const expectedMain = ingredients.find((item) => item.type === 'main');
+
+        expect(expectedMain).to.exist;
+
+        cy.get('@ingredient').find('button').click();
+
+        cy.get('.constructor-element', { timeout: 6000 }).should('exist');
+        cy.contains('.constructor-element', expectedMain.name).should('exist');
       });
     });
   });
